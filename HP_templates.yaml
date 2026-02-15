@@ -1,0 +1,138 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-02-04T07:21:22Z'
+  groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: e8fa3d2c284047fdb9f374731a82b3ef
+      template: HP_Printer_Manual
+      name: HP_Printer_Manual
+      groups:
+        - name: Templates
+      items:
+        - uuid: 3bfc17e510a5403187052c698c9fe146
+          name: PrintStatus
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.43.17.6.1.5.1.2
+          key: hp.printer.status
+          trends: '0'
+          value_type: CHAR
+        - uuid: 0f2e2e6711a84a909012e2cf3b2b6ccb
+          name: Print-IP
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.11.2.4.3.5.2.0
+          key: Print.IP
+          delay: 1d
+          trends: '0'
+          value_type: TEXT
+        - uuid: 2d5297b51e554e2787a7473cfb3fc331
+          name: Print-型號
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.2699.1.2.1.2.1.1.2.1
+          key: Print.octes
+          delay: 1d
+          trends: '0'
+          value_type: TEXT
+        - uuid: 8875aaed801744ab9b597100ff1afaef
+          name: 'Total Impressions'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.2.5.0
+          key: printer.impressions.total
+          delay: 30m
+        - uuid: bba63df969e444fab8962476e5053df3
+          name: 'Duplex Sheets'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.2.22.0
+          key: printer.stats.duplex
+          delay: 1d
+          preprocessing:
+            - type: SIMPLE_CHANGE
+              parameters:
+                - ''
+        - uuid: 6e447bac94a04830b4d37d3d9be49b21
+          name: 'Monochrome Impressions'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.2.6.0
+          key: printer.stats.mono
+          delay: 1d
+          preprocessing:
+            - type: SIMPLE_CHANGE
+              parameters:
+                - ''
+        - uuid: 66bfef16c96a48438cbfdc2b97927ee0
+          name: 'Toner Level: Black'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.43.11.1.1.9.1.1
+          key: toner.level.black
+          delay: 30m
+          units: '%'
+          triggers:
+            - uuid: ca3b65fd6b2c412a8e1310fe67cce08b
+              expression: last(/HP_Printer_Manual/toner.level.black)<2
+              name: 黑色炭粉即將耗盡
+              priority: DISASTER
+            - uuid: 3e4a1732731f46ceb6acd41b0a342088
+              expression: last(/HP_Printer_Manual/toner.level.black)<5
+              name: 黑色炭粉即將耗盡
+              priority: WARNING
+        - uuid: bbbc0f1c2efb42559a10d177b21451ae
+          name: 'Toner Level: Cyan'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.43.11.1.1.9.1.2
+          key: toner.level.cyan
+          delay: 30m
+          units: '%'
+          triggers:
+            - uuid: 8692353114654bad98430ce78685f8f8
+              expression: last(/HP_Printer_Manual/toner.level.cyan)<3
+              name: 藍色炭粉即將耗盡
+              priority: WARNING
+        - uuid: 8eadb3f6c07e43389c3923b21587283d
+          name: 'Toner Level: Magenta'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.43.11.1.1.9.1.3
+          key: toner.level.magenta
+          delay: 30m
+          units: '%'
+          triggers:
+            - uuid: 9ee095285cf841438da718914e3de52b
+              expression: last(/HP_Printer_Manual/toner.level.magenta)<3
+              name: 粉炭粉即將耗盡
+              priority: WARNING
+        - uuid: 0adb5a6236394e6c807d6c119885c680
+          name: 'Toner Level: Yellow'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.2.1.43.11.1.1.9.1.4
+          key: toner.level.yellow
+          delay: 30m
+          units: '%'
+          triggers:
+            - uuid: 14f5ae05ece7405484c3065290c672c1
+              expression: last(/HP_Printer_Manual/toner.level.yellow)<3
+              name: 黃炭粉即將耗盡
+              priority: WARNING
+        - uuid: 5e22868f3c294c8ba31f8988430ab236
+          name: 'Remaining Pages: Black'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.10.11.1.0
+          key: toner.pages.black
+          delay: 30m
+        - uuid: 08af1b1b1b9e455c8d85040d83767dd8
+          name: 'Remaining Pages: Cyan'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.10.11.2.0
+          key: toner.pages.cyan
+          delay: 30m
+        - uuid: 769b1d605a3c4151ae9ff0e7b93f26f4
+          name: 'Remaining Pages: Magenta'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.10.11.3.0
+          key: toner.pages.magenta
+          delay: 30m
+        - uuid: 5a37fe0c7aa74720bfe773fe9fd710ff
+          name: 'Remaining Pages: Yellow'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.11.2.3.9.4.2.1.4.1.10.11.4.0
+          key: toner.pages.yellow
+          delay: 30m
