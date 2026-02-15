@@ -1,0 +1,201 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-01-28T00:48:26Z'
+  groups:
+    - uuid: 3dcd5bbe90534f9e8eb5c2d53756af63
+      name: Templates/Power
+  hosts:
+    - host: UPS-WinPower96
+      name: UPS-WinPower96
+      groups:
+        - name: Templates/Power
+      interfaces:
+        - ip: 192.168.1.96
+          interface_ref: if1
+      items:
+        - name: 'UPS 溫度'
+          type: DEPENDENT
+          key: ups..batV
+          delay: '0'
+          history: 7d
+          trends: 30d
+          value_type: FLOAT
+          units: °C
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.upsTemp
+            - type: REGEX
+              parameters:
+                - '(\d+(\.\d+)?)'
+                - \1
+          master_item:
+            key: ups.raw.json
+        - name: 電池容量
+          type: DEPENDENT
+          key: ups.batCapacity
+          delay: '0'
+          history: 7d
+          trends: 30d
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.batCapacity
+            - type: REGEX
+              parameters:
+                - (\d+)
+                - \1
+          master_item:
+            key: ups.raw.json
+          triggers:
+            - expression: last(/UPS-WinPower96/ups.batCapacity)<90
+              name: UPS電池啟動
+              priority: HIGH
+        - name: 電池電壓
+          type: DEPENDENT
+          key: ups.batV
+          delay: '0'
+          history: 7d
+          trends: 30d
+          value_type: FLOAT
+          units: V
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.batV
+            - type: REGEX
+              parameters:
+                - '(\d+(\.\d+)?)'
+                - \1
+          master_item:
+            key: ups.raw.json
+        - name: '輸入電壓（Input Voltage, V）'
+          type: DEPENDENT
+          key: ups.in.volt
+          delay: '0'
+          history: 7d
+          trends: 30d
+          value_type: FLOAT
+          units: V
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.inVolt
+            - type: REGEX
+              parameters:
+                - '(\d+(\.\d+)?)'
+                - \1
+          master_item:
+            key: ups.raw.json
+        - name: '輸入頻率（Input Frequency, Hz）'
+          type: DEPENDENT
+          key: ups.Input.Frequency
+          delay: '0'
+          history: 7d
+          trends: 30d
+          value_type: FLOAT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.inFreq
+            - type: REGEX
+              parameters:
+                - '(\d+(\.\d+)?)'
+                - \1
+          master_item:
+            key: ups.raw.json
+        - name: 剩餘時間(純估值)
+          type: DEPENDENT
+          key: ups.last.running.time
+          delay: '0'
+          value_type: FLOAT
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  if(value > 90)
+                   timeReference = 5;
+                  else if(value > 80)
+                   timeReference = 5.5;
+                  else if(value > 70)
+                   timeReference = 7;
+                  else if(value > 60)
+                   timeReference = 8;
+                  else if(value > 50)
+                   timeReference = 10;
+                  else if(value > 40)
+                   timeReference = 15;
+                  else if(value > 30)
+                   timeReference = 20;
+                  else if(value > 20)
+                   timeReference = 29;
+                  else if(value > 10)
+                   timeReference = 45;
+                  else
+                   timeReference = 90;
+                  return timeReference;
+          master_item:
+            key: ups.loadPercent
+        - name: 負載（Load%）
+          type: DEPENDENT
+          key: ups.loadPercent
+          delay: '0'
+          history: 7d
+          trends: 30d
+          value_type: FLOAT
+          units: '%'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.loadPercent
+            - type: REGEX
+              parameters:
+                - (\d+)
+                - \1
+          master_item:
+            key: ups.raw.json
+          triggers:
+            - expression: last(/UPS-WinPower96/ups.loadPercent)>40
+              name: UPS附載過高
+              priority: HIGH
+        - name: '輸出電壓（Output Voltage, V）'
+          type: DEPENDENT
+          key: ups.outVolt
+          delay: '0'
+          history: 7d
+          trends: 30d
+          value_type: FLOAT
+          units: V
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.outVolt
+            - type: REGEX
+              parameters:
+                - '(\d+(\.\d+)?)'
+                - \1
+          master_item:
+            key: ups.raw.json
+        - name: UPSITEMS
+          type: HTTP_AGENT
+          key: ups.raw.json
+          delay: 5s
+          trends: '0'
+          value_type: TEXT
+          interface_ref: if1
+          url: 'https://192.168.1.96:1560/0/json'
+        - name: 'UPS 狀態（Normal / On Battery / Alarm）'
+          type: DEPENDENT
+          key: ups.status
+          delay: '0'
+          history: 7d
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.status
+          master_item:
+            key: ups.raw.json
+      inventory_mode: DISABLED

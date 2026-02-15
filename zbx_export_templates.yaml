@@ -1,0 +1,92 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-02-02T04:11:25Z'
+  groups:
+    - uuid: 3e4b0a21b7584d3d8664cf78663afd72
+      name: 'MES HA'
+  templates:
+    - uuid: 25f5115b7cf5478a81c03c8f2e2e08b5
+      template: 'MES SQL mon'
+      name: 'MES SQL mon'
+      groups:
+        - name: 'MES HA'
+      items:
+        - uuid: 7e9359e0da4343d590b02b64387925f4
+          name: 'Slave IO Running Status'
+          type: DEPENDENT
+          key: mysql.slave_status.io_running
+          delay: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'Slave_IO_Running:\s+(.*)'
+                - \1
+            - type: JAVASCRIPT
+              parameters:
+                - 'return (value.trim() === ''Yes'') ? 1 : 0;'
+          master_item:
+            key: mysql.slave_status_raw
+          tags:
+            - tag: MES
+              value: running
+        - uuid: 8ae37b84c3454d5f9a42e30d9dffb0de
+          name: 'Slave Last Error'
+          type: DEPENDENT
+          key: mysql.slave_status.last_error
+          delay: '0'
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'Last_Error:([^\r\n]*)'
+                - \1
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var val = value.trim();
+                  if (!val || val.length === 0) {
+                      return "1";
+                  }
+                  if (val.indexOf("Skip_Counter") !== -1) {
+                      return "1";
+                  }
+                  
+                  return val;
+          master_item:
+            key: mysql.slave_status_raw
+          tags:
+            - tag: MES
+              value: running
+        - uuid: a6afbae95d714248bfd9e6319b65a6c1
+          name: 'Slave SQL Running Status'
+          type: DEPENDENT
+          key: mysql.slave_status.sql_running
+          delay: '0'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - 'Slave_SQL_Running:\s+(.*)'
+                - \1
+            - type: JAVASCRIPT
+              parameters:
+                - 'return (value.trim() === ''Yes'') ? 1 : 0;'
+          master_item:
+            key: mysql.slave_status_raw
+          tags:
+            - tag: MES
+              value: running
+        - uuid: 515f35f0c4fa4677ab1331f88f7dae2e
+          name: 'MariaDB Replication Raw Data'
+          key: mysql.slave_status_raw
+          delay: 30s
+          trends: '0'
+          value_type: TEXT
+          tags:
+            - tag: MES
+              value: running
+  triggers:
+    - uuid: 2f3b3be4518344a0911fde132d82956b
+      expression: 'last(/MES SQL mon/mysql.slave_status.io_running)<>1 or last(/MES SQL mon/mysql.slave_status.last_error)<>1 or last(/MES SQL mon/mysql.slave_status.sql_running)<>1'
+      name: 'MariaDB Sync Error on {HOST.NAME}: {ITEM.VALUE}'
+      priority: AVERAGE

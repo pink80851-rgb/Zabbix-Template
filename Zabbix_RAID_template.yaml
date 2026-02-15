@@ -1,0 +1,94 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-01-28T00:46:27Z'
+  groups:
+    - uuid: 7df96b18c230490a9a0a9e2307226338
+      name: Templates
+  templates:
+    - uuid: 8b5545c273294571a662e10480262d51
+      template: 'By users Raid only'
+      name: 'By users Raid only'
+      groups:
+        - name: Templates
+      items:
+        - uuid: 95b8d2f22aa84060a9cafab04a2c3106
+          name: 'RAID Total Status'
+          key: raid.vd.status
+          delay: 10m
+          trends: '0'
+          value_type: CHAR
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - RAID\d+\s+(Optl|Dgrd|Pdgd|Degraded|Offline)
+                - \1
+      discovery_rules:
+        - uuid: f33fa36990b84d14bb41308224c39f46
+          name: 'RAID Disk Discovery'
+          key: raid.pd.discovery
+          item_prototypes:
+            - uuid: ec45b91b811745d4a11bc8ada498513b
+              name: 'DiskSlot {#SLOT}: Capacity'
+              key: 'raid.pd.size[{#SLOT}]'
+              delay: 12h
+              trends: '0'
+              value_type: CHAR
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '(\d+\.?\d+)\s+(TB|GB)'
+                    - '\1 \2'
+              tags:
+                - tag: DiskSlot
+                  value: '{#SLOT}'
+            - uuid: 9949dedbd78847098371c6f655770322
+              name: 'DiskSlot {#SLOT}: Serial Number'
+              key: 'raid.pd.sn[{#SLOT}]'
+              delay: 12h
+              trends: '0'
+              value_type: CHAR
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - 'SN =\s+(.*)'
+                    - \1
+              tags:
+                - tag: DiskSlot
+                  value: '{#SLOT}'
+                - tag: Raid
+                  value: Model
+            - uuid: c58c281a98e24970a44db4538c138a13
+              name: 'DiskSlot {#SLOT}: State'
+              key: 'raid.pd.status[{#SLOT}]'
+              trends: '0'
+              value_type: CHAR
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - (Onln|GHS|Fail|Rbld|Msng)
+                    - \1
+              tags:
+                - tag: DiskSlot
+                  value: '{#SLOT}'
+                - tag: Raid
+                  value: slot
+              trigger_prototypes:
+                - uuid: de005a08d77c4ae0be18c3e0cc303957
+                  expression: 'last(/By users Raid only/raid.pd.status[{#SLOT}])<>"Onln" and last(/By users Raid only/raid.pd.status[{#SLOT}])<>"GHS"'
+                  name: 'RAID Disk {#SLOT}: Unexpected State ({ITEM.VALUE})'
+                  priority: WARNING
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.Controllers[0]["Response Data"]["Drive Information"]'
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var input = JSON.parse(value);
+                  var output = [];
+                  input.forEach(function(item) {
+                      // 解析 "252:3" 取出後面的 "3"
+                      var slot = item["EID:Slt"].split(":")[1];
+                      output.push({ "{#SLOT}": slot });
+                  });
+                  return JSON.stringify(output);
