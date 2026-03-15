@@ -1,0 +1,31 @@
+zabbix_export:
+  version: '6.0'
+  date: '2026-03-13T08:45:13Z'
+  groups:
+    - uuid: 846977d1dfed4968bc5f8bdb363285bc
+      name: 'Templates/Operating systems'
+  templates:
+    - uuid: 2597a57548394795a8fca2894fbcb35f
+      template: User_PassWord_Day
+      name: User_PassWord_Day
+      description: '使用者密碼管理使用 (ISO27001)'
+      groups:
+        - name: 'Templates/Operating systems'
+      discovery_rules:
+        - uuid: eeb8d7e7d91e4f4cb2ce4e249a7e61ed
+          name: 'Local User Discovery'
+          key: winr.user.discovery
+          delay: 1d
+          item_prototypes:
+            - uuid: 6c3f4ba0f42f4b31880a9e0a5e93d45b
+              name: 'User:{#USERNAME}'
+              key: 'winr.user.pwd_age[{#USERNAME}]'
+              delay: 1d
+              preprocessing:
+                - type: REGEX
+                  parameters:
+                    - '(-?\d+)'
+                    - \1
+              tags:
+                - tag: USERDAY
+                  value: DAY
